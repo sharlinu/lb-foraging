@@ -48,7 +48,7 @@ pip install lbforaging
 ```
 Or to ensure that you have the latest version:
 ```sh
-git clone https://github.com/semitable/lb-foraging.git
+git clone https://github.com/sharlinu/lb-foraging.git
 cd lb-foraging
 pip install -e .
 ```
