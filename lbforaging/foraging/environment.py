@@ -7,7 +7,7 @@ from gym import Env, spaces
 import gym
 from gym.utils import seeding
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 class Action(Enum):
     NONE = 0
@@ -89,7 +89,7 @@ class ForagingEnv(Env):
         penalty=0.0,
     ):
         self.logger = logging.getLogger(__name__)
-        self.seed()
+        # self.seed()
         self.players = [Player(id=i) for i in range(players)]
 
         self.field = np.zeros(field_size, np.int32)
@@ -124,6 +124,7 @@ class ForagingEnv(Env):
         self.viewer = None
 
         self.n_agents = len(self.players)
+        self.n_objects = self.max_food
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -141,6 +142,7 @@ class ForagingEnv(Env):
 
             max_food = self.max_food
             max_food_level = self.max_player_level * len(self.players)
+            # max_food_level = 1
 
             min_obs = [-1, -1, 0] * max_food + [-1, -1, 0] * len(self.players)
             max_obs = [field_x-1, field_y-1, max_food_level] * max_food + [
@@ -159,6 +161,7 @@ class ForagingEnv(Env):
 
             # foods layer: foods level
             max_food_level = self.max_player_level * len(self.players)
+            # max_food_level = 1
             foods_min = np.zeros(self.field_size, dtype=np.float32)
             foods_max = np.ones(self.field_size, dtype=np.float32) * max_food_level
 
@@ -242,6 +245,10 @@ class ForagingEnv(Env):
         )
 
     def adjacent_food_location(self, row, col):
+        """
+        Only returns food location when it is active, i.e. >0
+
+        """
         if row > 1 and self.field[row - 1, col] > 0:
             return row - 1, col
         elif row < self.rows - 1 and self.field[row + 1, col] > 0:
@@ -265,12 +272,10 @@ class ForagingEnv(Env):
         food_count = 0
         attempts = 0
         min_level = max_level if self.force_coop else 1
-
         while food_count < max_food and attempts < 1000:
             attempts += 1
             row = self.np_random.randint(1, self.rows - 1)
             col = self.np_random.randint(1, self.cols - 1)
-
             # check if it has neighbors:
             if (
                 self.neighborhood(row, col).sum() > 0
@@ -290,7 +295,7 @@ class ForagingEnv(Env):
         self._food_spawned = self.field.sum()
 
     def _is_empty_location(self, row, col):
-        if self.field[row, col] != 0:
+        if self.field[row, col] > 0:
             return False
         for a in self.players:
             if a.position and row == a.position[0] and col == a.position[1]:
@@ -446,21 +451,7 @@ class ForagingEnv(Env):
             # foods_layer = np.zeros(grid_shape, dtype=np.float32)
             foods_layer = self.field.copy()
 
-            # access_layer = np.ones(grid_shape, dtype=np.float32)
-            # # out of bounds not accessible
-            # access_layer[:self.sight, :] = 0.0
-            # access_layer[-self.sight:, :] = 0.0
-            # access_layer[:, :self.sight] = 0.0
-            # access_layer[:, -self.sight:] = 0.0
-            # agent locations are not accessible
-            # for player in self.players:
-            #     player_x, player_y = player.position
-            #     access_layer[player_x + self.sight, player_y + self.sight] = 0.0
-            # food locations are not accessible
-            # foods_x, foods_y = self.field.nonzero()
-            # for x, y in zip(foods_x, foods_y):
-            #     access_layer[x + self.sight, y + self.sight] = 0.0
-            
+
             return np.stack([agents_layer, ego_layer, foods_layer], axis=2)
 
         def get_agent_grid_bounds(agent_x, agent_y):
@@ -492,9 +483,13 @@ class ForagingEnv(Env):
         return nobs, np.array(nreward), np.array(ndone), ninfo
 
     def reset(self):
+        # print('seed:', self.seed())
         self.field = np.zeros(self.field_size, np.int32)
         self.spawn_players(self.max_player_level)
         player_levels = sorted([player.level for player in self.players])
+
+        # self.spawn_food(
+        #     self.max_food, max_level=1)
 
         self.spawn_food(
             self.max_food, max_level=sum(player_levels[:3])
@@ -587,10 +582,10 @@ class ForagingEnv(Env):
                         adj_player_level * self._food_spawned
                     )  # normalize reward
             # and the food is removed
-            self.field[frow, fcol] = 0
+            self.field[frow, fcol] = -1
 
         self._game_over = (
-            self.field.sum() == 0 or self._max_episode_steps <= self.current_step
+            np.max(self.field) <= 0 or self._max_episode_steps <= self.current_step
         )
         self._gen_valid_moves()
 
@@ -600,7 +595,8 @@ class ForagingEnv(Env):
         return self._make_gym_obs()
 
     def _init_render(self):
-        from rendering import Viewer
+        # from foraging.rendering import Viewer
+        from lbforaging.foraging.rendering import Viewer
 
         self.viewer = Viewer((self.rows, self.cols))
         self._rendering_initialized = True
@@ -620,35 +616,46 @@ class ForagingEnv(Env):
 def _game_loop(env, render=False):
     """
     """
+    # env.seed(1)
     obs = env.reset()
     done = False
-    print('agents: ', obs[0]['image'][:,:,0])
-    print('ego: ', obs[0]['image'][:,:,1])
-    print('food: ', obs[0]['image'][:,:,2])
-    print('field', env.field)
     if render:
-        env.render()
+        arr = env.render(mode='rgb_array')
+        plt.xticks([])
+        plt.yticks([])
+        plt.imshow(arr)
+        # plt.axis('off')
+        plt.savefig('nolines_run_initial.png')
         #pygame.display.update()  # update window
         time.sleep(0.5)
-
+    ct =0
     while not done:
 
         actions = env.action_space.sample() # TODO this needs to be replaced
-        print('actions', actions)
+        # print('actions', actions)
         nobs, nreward, ndone, _ = env.step(actions)
+        print('agent', nobs[0]['image'][:,:,0])
+        print('ego', nobs[0]['image'][:, :, 1])
+        print('food', nobs[0]['image'][:, :, 2])
+        time.sleep(1)
 
         if sum(nreward) > 0:
             print(nreward)
 
         if render:
-            env.render()
+            # env.render(mode='rgb_array')
+            arr = env.render(mode='rgb_array')
+            plt.xticks([])
+            plt.yticks([])
+            plt.imshow(arr)
+            # plt.axis('off')
+            plt.savefig(f'nolines_run_{ct}.png')
+
             #pygame.display.update()  # update window
             time.sleep(0.5)
-        print('agents: ', nobs[0]['image'][:, :, 0])
-        print('ego: ', nobs[0]['image'][:, :, 1])
-        print('food: ', nobs[0]['image'][:, :, 2])
-        print('field', env.field)
         done = np.all(ndone)
+        ct += 1
+    print('episode finished')
     # print(env.players[0].score, env.players[1].score)
 
 
@@ -657,17 +664,17 @@ if __name__ == "__main__":
     env = ForagingEnv(
         players=2,
         max_player_level=3,
-        field_size= (5,5),
-        max_food=3,
+        field_size= (8,8),
+        max_food=2,
         grid_observation=True,
-        sight=5,
-        max_episode_steps=25,
-        force_coop=False
+        sight=8,
+        max_episode_steps=10,
+        force_coop=True,
     )
     # background_colour = (50,50,50)
-    obs = env.reset()
-    for episode in range(5):
+    # obs = env.reset()
+    env.seed(4001)
+    for episode in range(10):
         _game_loop(env,  render = True)
-    nobs, nreward, ndone, ninfo = env.step([1,1])
+    # nobs, nreward, ndone, ninfo = env.step([1,1])
     print("Done")
-

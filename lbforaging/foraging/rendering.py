@@ -112,7 +112,7 @@ class Viewer(object):
             translation=(-left * scalex, -bottom * scaley), scale=(scalex, scaley)
         )
 
-    def render(self, env, return_rgb_array=False):
+    def render(self, env, return_rgb_array= False):
         glClearColor(*_WHITE, 0)
         self.window.clear()
         self.window.switch_to()
@@ -121,7 +121,7 @@ class Viewer(object):
         self._draw_grid()
         self._draw_food(env)
         self._draw_players(env)
-
+        # return_rgb_array = True
         if return_rgb_array:
             buffer = pyglet.image.get_buffer_manager().get_color_buffer()
             image_data = buffer.get_image_data()
