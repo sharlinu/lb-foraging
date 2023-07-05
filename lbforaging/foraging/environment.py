@@ -84,6 +84,8 @@ class ForagingEnv(Env):
         sight,
         max_episode_steps,
         force_coop,
+        keep_food = False,
+        simple = True,
         normalize_reward=True,
         grid_observation=False,
         penalty=0.0,
@@ -93,6 +95,10 @@ class ForagingEnv(Env):
         self.players = [Player(id=i) for i in range(players)]
 
         self.field = np.zeros(field_size, np.int32)
+        self.keep_food = keep_food
+        print('keep food', keep_food)
+        self.simple = simple
+        print('rationed food', simple)
 
         self.penalty = penalty
         
@@ -488,12 +494,13 @@ class ForagingEnv(Env):
         self.spawn_players(self.max_player_level)
         player_levels = sorted([player.level for player in self.players])
 
-        # self.spawn_food(
-        #     self.max_food, max_level=1)
-
-        self.spawn_food(
-            self.max_food, max_level=sum(player_levels[:3])
-        )
+        if self.simple:
+            self.spawn_food(
+                self.max_food, max_level=1)
+        else:
+            self.spawn_food(
+                self.max_food, max_level=sum(player_levels[:2])
+            )
         self.current_step = 0
         self._game_over = False
         self._gen_valid_moves()
@@ -582,7 +589,10 @@ class ForagingEnv(Env):
                         adj_player_level * self._food_spawned
                     )  # normalize reward
             # and the food is removed
-            self.field[frow, fcol] = -1
+            if self.keep_food:
+                self.field[frow, fcol] = -1
+            else:
+                self.field[frow,fcol] = 0
 
         self._game_over = (
             np.max(self.field) <= 0 or self._max_episode_steps <= self.current_step
