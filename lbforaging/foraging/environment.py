@@ -183,7 +183,7 @@ class ForagingEnv(Env):
     def from_obs(cls, obs):
         players = []
         for p in enumerate(obs.players):
-            player = Player(id=i)
+            player = Player(id=p)
             player.setup(p.position, p.level, obs.field.shape)
             player.score = p.score if p.score else 0
             players.append(player)
@@ -488,12 +488,12 @@ class ForagingEnv(Env):
         self.spawn_players(self.max_player_level)
         player_levels = sorted([player.level for player in self.players])
 
-        # self.spawn_food(
-        #     self.max_food, max_level=1)
-
         self.spawn_food(
-            self.max_food, max_level=sum(player_levels[:3])
-        )
+            self.max_food, max_level=1)
+
+        # self.spawn_food(
+        #     self.max_food, max_level=sum(player_levels[:3])
+        # )
         self.current_step = 0
         self._game_over = False
         self._gen_valid_moves()
@@ -673,7 +673,7 @@ if __name__ == "__main__":
     )
     # background_colour = (50,50,50)
     # obs = env.reset()
-    env.seed(4001)
+    # env.seed(4001)
     for episode in range(10):
         _game_loop(env,  render = True)
     # nobs, nreward, ndone, ninfo = env.step([1,1])
