@@ -552,12 +552,16 @@ class ForagingEnv(Env):
                 loading_players.add(player)
 
         # and do movements for non colliding players
-
-        for k, v in collisions.items():
-            if len(v) > 1:  # make sure no more than an player will arrive at location
+        sorted_keys = sorted(collisions, key=lambda k: len(collisions[k]), reverse=True)
+        for k in sorted_keys:
+            if len(collisions[k]) > 1:  # make sure no more than an player will arrive at location
+                for a in collisions[k]:
+                    if a.position != k :
+                        collisions[a.position].append(a)
                 continue
             # print(f'changing new position to {k}')
-            v[0].position = k
+            collisions[k][0].position = k
+
 
         # finally process the loadings:
         while loading_players:
