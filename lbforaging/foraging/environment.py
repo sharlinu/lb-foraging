@@ -499,7 +499,7 @@ class ForagingEnv(Env):
                 self.max_food, max_level=1)
         else:
             self.spawn_food(
-                self.max_food, max_level=sum(player_levels[:2])
+                self.max_food, max_level=sum(player_levels[:3])
             )
         self.current_step = 0
         self._game_over = False
@@ -679,14 +679,15 @@ def _game_loop(env, render=False):
 
 if __name__ == "__main__":
     env = ForagingEnv(
-        players=2,
-        max_player_level=3,
-        field_size= (8,8),
-        max_food=2,
+        players=8,
+        max_player_level=2,
+        field_size= (10,10),
+        max_food=1,
         grid_observation=True,
-        sight=8,
+        sight=10,
         max_episode_steps=10,
         force_coop=True,
+        simple=False,
     )
     # background_colour = (50,50,50)
     # obs = env.reset()
