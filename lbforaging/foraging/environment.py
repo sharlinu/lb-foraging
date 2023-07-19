@@ -85,7 +85,7 @@ class ForagingEnv(Env):
         max_episode_steps,
         force_coop,
         keep_food = False,
-        simple = True,
+        simple = False,
         normalize_reward=True,
         grid_observation=False,
         penalty=0.0,
@@ -554,12 +554,15 @@ class ForagingEnv(Env):
         # and do movements for non colliding players
         sorted_keys = sorted(collisions, key=lambda k: len(collisions[k]), reverse=True)
         for k in sorted_keys:
-            if len(collisions[k]) > 1:  # make sure no more than an player will arrive at location
+            if len(collisions[k]) > 1:  # make sure no more than one player will arrive at location
                 for a in collisions[k]:
                     if a.position != k :
                         collisions[a.position].append(a)
+
+        for k,v in collisions.items():
+            if len(v)>1:
                 continue
-            # print(f'changing new position to {k}')
+
             collisions[k][0].position = k
 
 
