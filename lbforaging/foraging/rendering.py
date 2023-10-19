@@ -112,7 +112,7 @@ class Viewer(object):
             translation=(-left * scalex, -bottom * scaley), scale=(scalex, scaley)
         )
 
-    def render(self, env, return_rgb_array= False):
+    def render(self, env, return_rgb_array= False, actions=None):
         glClearColor(*_WHITE, 0)
         self.window.clear()
         self.window.switch_to()
@@ -120,7 +120,7 @@ class Viewer(object):
 
         self._draw_grid()
         self._draw_food(env)
-        self._draw_players(env)
+        self._draw_players(env, actions)
         # return_rgb_array = True
         if return_rgb_array:
             buffer = pyglet.image.get_buffer_manager().get_color_buffer()
@@ -192,24 +192,50 @@ class Viewer(object):
         for row, col in idxes:
             self._draw_badge(row, col, env.field[row, col])
 
-    def _draw_players(self, env):
+    def _draw_players(self, env, actions=None):
         players = []
+        fields = []
         batch = pyglet.graphics.Batch()
 
-        for player in env.players:
-            row, col = player.position
-            players.append(
-                pyglet.sprite.Sprite(
-                    self.img_agent,
-                    (self.grid_size + 1) * col,
-                    self.height - (self.grid_size + 1) * (row + 1),
-                    batch=batch,
+        if actions:
+            for player,action in zip(env.players,actions):
+                row, col = player.position
+                if action == 5:
+                    fields.append(
+                        pyglet.shapes.Rectangle(
+                            x=(self.grid_size + 1) * col,
+                            y=self.height - (self.grid_size + 1) * (row + 1),
+                            width=self.grid_size,
+                            height=self.grid_size,
+                            color=(55, 55, 255),
+                            batch=batch,
+                        )
+                    )
+                players.append(
+                    pyglet.sprite.Sprite(
+                        self.img_agent,
+                        (self.grid_size + 1) * col,
+                        self.height - (self.grid_size + 1) * (row + 1),
+                        batch=batch,
+                    )
                 )
-            )
+        else:
+            for player in env.players:
+                row, col = player.position
+                players.append(
+                    pyglet.sprite.Sprite(
+                        self.img_agent,
+                        (self.grid_size + 1) * col,
+                        self.height - (self.grid_size + 1) * (row + 1),
+                        batch=batch,
+                    )
+                )
         for p in players:
             p.update(scale=self.grid_size / p.width)
+
         batch.draw()
         for p in env.players:
+            # draws level of players
             self._draw_badge(*p.position, p.level)
 
     def _draw_badge(self, row, col, level):

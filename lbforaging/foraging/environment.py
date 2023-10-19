@@ -288,15 +288,19 @@ class ForagingEnv(Env):
                 or self.neighborhood(row, col, distance=2, ignore_diag=True) > 0
                 or not self._is_empty_location(row, col)
             ):
+                # print('continued after attempts:', attempts)
                 continue
 
             self.field[row, col] = (
                 min_level
                 if min_level == max_level
                 # ! this is excluding food of level `max_level` but is kept for
-                # ! consistency with prior LBF versions
+                # ! consistency with prior LBF versions}
                 else self.np_random.randint(min_level, max_level)
+
             )
+            # print(min_level, max_level,)
+            # self.np_random.randint(min_level, max_level)
             food_count += 1
         self._food_spawned = self.field.sum()
 
@@ -618,11 +622,11 @@ class ForagingEnv(Env):
         self.viewer = Viewer((self.rows, self.cols))
         self._rendering_initialized = True
 
-    def render(self, mode="human"):
+    def render(self, mode="human", actions=None):
         if not self._rendering_initialized:
             self._init_render()
 
-        return self.viewer.render(self, return_rgb_array=mode == "rgb_array")
+        return self.viewer.render(self, return_rgb_array=mode == "rgb_array", actions=actions)
 
     def close(self):
         if self.viewer:
@@ -636,24 +640,19 @@ def _game_loop(env, render=False):
     # env.seed(1)
     obs = env.reset()
     done = False
-    if render:
-        arr = env.render(mode='rgb_array')
-        plt.xticks([])
-        plt.yticks([])
-        plt.imshow(arr)
-        # plt.axis('off')
-        plt.savefig('nolines_run_initial.png')
-        #pygame.display.update()  # update window
-        time.sleep(0.5)
+    # if render:
+    #     arr = env.render(mode='rgb_array', actions=)
+    #     #pygame.display.update()  # update window
+    #     time.sleep(0.5)
     ct =0
     while not done:
 
         actions = env.action_space.sample() # TODO this needs to be replaced
         # print('actions', actions)
         nobs, nreward, ndone, _ = env.step(actions)
-        print('agent', nobs[0]['image'][:,:,0])
-        print('ego', nobs[0]['image'][:, :, 1])
-        print('food', nobs[0]['image'][:, :, 2])
+        # print('agent', nobs[0]['image'][:,:,0])
+        # print('ego', nobs[0]['image'][:, :, 1])
+        # print('food', nobs[0]['image'][:, :, 2])
         time.sleep(1)
 
         if sum(nreward) > 0:
@@ -661,13 +660,13 @@ def _game_loop(env, render=False):
 
         if render:
             # env.render(mode='rgb_array')
-            arr = env.render(mode='rgb_array')
-            plt.xticks([])
-            plt.yticks([])
-            plt.imshow(arr)
-            # plt.axis('off')
-            plt.savefig(f'nolines_run_{ct}.png')
-
+            arr = env.render(mode='rgb_array', actions=actions)
+            # plt.xticks([])
+            # plt.yticks([])
+            # plt.imshow(arr)
+            # # plt.axis('off')
+            # plt.savefig(f'nolines_run_{ct}.png')
+            #
             #pygame.display.update()  # update window
             time.sleep(0.5)
         done = np.all(ndone)
@@ -679,20 +678,21 @@ def _game_loop(env, render=False):
 
 if __name__ == "__main__":
     env = ForagingEnv(
-        players=8,
+        players=4,
+        max_food=4,
         max_player_level=2,
         field_size= (10,10),
-        max_food=1,
-        grid_observation=True,
-        sight=10,
-        max_episode_steps=10,
-        force_coop=True,
+        grid_observation=False,
+        sight=8,
+        max_episode_steps=20,
+        force_coop=False,
         simple=False,
+        keep_food=True,
     )
     # background_colour = (50,50,50)
     # obs = env.reset()
     # env.seed(4001)
-    for episode in range(10):
+    for episode in range(100):
         _game_loop(env,  render = True)
     # nobs, nreward, ndone, ninfo = env.step([1,1])
     print("Done")
