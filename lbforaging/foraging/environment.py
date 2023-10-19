@@ -91,7 +91,7 @@ class ForagingEnv(Env):
         penalty=0.0,
     ):
         self.logger = logging.getLogger(__name__)
-        # self.seed()
+        self.seed()
         self.players = [Player(id=i) for i in range(players)]
 
         self.field = np.zeros(field_size, np.int32)
@@ -112,6 +112,7 @@ class ForagingEnv(Env):
         self._rendering_initialized = False
         self._valid_actions = None
         self._max_episode_steps = max_episode_steps
+        print(max_episode_steps)
 
         self._normalize_reward = normalize_reward
         self._grid_observation = grid_observation
@@ -494,6 +495,7 @@ class ForagingEnv(Env):
 
     def reset(self):
         # print('seed:', self.seed())
+        self.seed()
         self.field = np.zeros(self.field_size, np.int32)
         self.spawn_players(self.max_player_level)
         player_levels = sorted([player.level for player in self.players])
