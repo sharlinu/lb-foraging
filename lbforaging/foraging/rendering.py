@@ -237,6 +237,7 @@ class Viewer(object):
         for p in env.players:
             # draws level of players
             self._draw_badge(*p.position, p.level)
+            self._draw_id(*p.position, p.id)
 
     def _draw_badge(self, row, col, level):
         resolution = 6
@@ -267,5 +268,37 @@ class Viewer(object):
             anchor_x="center",
             anchor_y="center",
             color=(*_BLACK, 255),
+        )
+        label.draw()
+
+    def _draw_id(self, row, col, id):
+        resolution = 6
+        radius = self.grid_size / 5
+
+        badge_x = col * (self.grid_size + 1) + (1 / 2) * (self.grid_size + 1)
+        badge_y = self.height - (self.grid_size + 1) * (row) - (1 / 4) * (self.grid_size + 1)
+
+        # make a circle
+        # verts = []
+        # for i in range(resolution):
+        #     angle = 2 * math.pi * i / resolution
+        #     x = radius * math.cos(angle) + badge_x
+        #     y = radius * math.sin(angle) + badge_y
+        #     verts += [x, y]
+        # circle = pyglet.graphics.vertex_list(resolution, ("v2f", verts))
+        # glColor3ub(*_WHITE)
+        # # circle.draw(GL_POLYGON)
+        # glColor3ub(*_BLACK)
+        # circle.draw(GL_LINE_LOOP)
+        label = pyglet.text.Label(
+            str(id),
+            font_name="Times New Roman",
+            font_size=12,
+            bold=True,
+            x=badge_x,
+            y=badge_y + 2,
+            anchor_x="center",
+            anchor_y="center",
+            color=(*_WHITE, 255),
         )
         label.draw()
